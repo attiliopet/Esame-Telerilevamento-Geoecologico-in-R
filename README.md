@@ -1,6 +1,6 @@
 # 🌳 Analisi Multitemporale della Muraglia Verde (2005 - 2022)
 ### Esame di Telerilevamento Geo-Ecologico in R - 2026
-#### [Nome Cognome] — matricola n. [•••••]
+#### [Petreni Attilio] — matricola n. [0001055390]
 
 # 📑 Introduzione
 
