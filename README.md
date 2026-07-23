@@ -33,10 +33,97 @@ Le immagini satellitari sono state scaricate tramite [**Google Earth Engine**](h
 - Pre-intervento: immagine **Landsat 5 TM**, anno 2005
 - Post-intervento: immagine **Landsat 8 OLI**, anno 2022
 
-> [!NOTE]
-> Il codice JavaScript utilizzato per selezionare ed esportare le immagini da GEE è disponibile nel file `Code.js`.
-
 Data la diversa numerazione nativa delle bande tra i due sensori, in fase di esportazione le bande sono state riordinate secondo lo schema comune **1=BLUE, 2=GREEN, 3=RED, 4=NIR, 5=SWIR**, così da rendere le due immagini direttamente confrontabili banda per banda nelle analisi successive.
+
+## Script Google Earth Engine (JavaScript)
+
+```javascript
+// =====================================================================
+// GOOGLE EARTH ENGINE SCRIPT: Esportazione Immagini per Muraglia Verde
+// Anni: 2005 (Landsat 5 - Pre) e 2022 (Landsat 8 - Post)
+// =====================================================================
+
+// 1. Definizione dell'Area di Studio (ROI - Region of Interest)
+// Area nel Sahel / Senegal (settore Louga / Ferlo della Muraglia Verde)
+var roi = /* color: #d63031 */ ee.Geometry.Polygon(
+    [[[-15.45, 15.35],
+      [-15.45, 15.25],
+      [-15.30, 15.25],
+      [-15.30, 15.35]]]);
+Map.centerObject(roi, 11);
+
+// 2. Funzione per la rimozione delle nuvole (Cloud Masking Landsat SR)
+function maskL578sr(image) {
+  var qa = image.select('QA_PIXEL');
+  var cloudShadowMask = (1 << 4);
+  var cloudsBitMask = (1 << 3);
+  var mask = qa.bitwiseAnd(cloudShadowMask).eq(0)
+    .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+// =====================================================================
+// 3. ELABORAZIONE IMMAGINE 2005 (Landsat 5 - Pre-Muraglia)
+// =====================================================================
+var l5 = ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')
+  .filterBounds(roi)
+  .filterDate('2005-01-01', '2005-12-31')
+  .filter(ee.Filter.lt('CLOUD_COVER', 10)) // Filtraggio per bassa nuvolosità
+  .map(maskL578sr)
+  .median() // Composizione mediana per rimuovere eventuali disturbi residui
+  .clip(roi);
+
+// Landsat 5: SR_B1=Blue, SR_B2=Green, SR_B3=Red, SR_B4=NIR, SR_B5=SWIR1
+var imgPre = l5.select(
+  ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5'],
+  ['BLUE', 'GREEN', 'RED', 'NIR', 'SWIR']
+).multiply(0.0000275).add(-0.2); // Fattore di scaling ufficiale Collection 2
+
+Map.addLayer(imgPre, {bands: ['NIR', 'RED', 'BLUE'], min: 0, max: 0.4}, 'Pre-Muraglia 2005');
+
+// =====================================================================
+// 4. ELABORAZIONE IMMAGINE 2022 (Landsat 8 - Post-Muraglia)
+// =====================================================================
+var l8 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+  .filterBounds(roi)
+  .filterDate('2022-01-01', '2022-12-31')
+  .filter(ee.Filter.lt('CLOUD_COVER', 10))
+  .map(maskL578sr)
+  .median()
+  .clip(roi);
+
+// Landsat 8: SR_B2=Blue, SR_B3=Green, SR_B4=Red, SR_B5=NIR, SR_B6=SWIR1
+var imgPost = l8.select(
+  ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6'],
+  ['BLUE', 'GREEN', 'RED', 'NIR', 'SWIR']
+).multiply(0.0000275).add(-0.2);
+
+Map.addLayer(imgPost, {bands: ['NIR', 'RED', 'BLUE'], min: 0, max: 0.4}, 'Post-Muraglia 2022');
+
+// =====================================================================
+// 5. ESPORTAZIONE SU GOOGLE DRIVE (GeoTIFF)
+// =====================================================================
+Export.image.toDrive({
+  image: imgPre,
+  description: 'Landsat5_Pre_Muraglia',
+  folder: 'immagini telerilevamento',
+  region: roi,
+  scale: 30, // Risoluzione spaziale Landsat (30 metri)
+  maxPixels: 1e9
+});
+
+Export.image.toDrive({
+  image: imgPost,
+  description: 'Landsat8_Post_Muraglia',
+  folder: 'immagini telerilevamento',
+  region: roi,
+  scale: 30,
+  maxPixels: 1e9
+});
+```
+
+> [!NOTE]
+> Lo script filtra le collezioni Landsat Collection 2 Level 2 (riflettanza di superficie) per copertura nuvolosa < 10%, applica una maschera nuvole/ombre tramite la banda `QA_PIXEL`, calcola il composito mediano annuale e applica il fattore di scala ufficiale USGS (moltiplicatore 0.0000275, offset -0.2) per ottenere valori di riflettanza fisicamente interpretabili tra 0 e 1.
 
 ---
 
@@ -331,8 +418,20 @@ ggplot(tabella_savi_long, aes(x = Classe, y = Percentuale, fill = Periodo)) +
 
 # 📌 Conclusioni
 
-Confrontando le percentuali di "Suolo nudo/degradato" contro "Vegetazione" tra il 2005 (Pre-Muraglia) e il 2022 (Post-Muraglia) in entrambe le tabelle, una diminuzione della quota di suolo nudo accompagnata da un aumento della quota di vegetazione supporterebbe l'ipotesi di un rinverdimento dell'area, in coerenza con quanto osservabile anche nelle mappe di differenza DVI, NDVI e BSI.
+Il confronto tra il 2005 e il 2022 su questo settore della Muraglia Verde in Senegal permette di quantificare, tramite quattro indici spettrali indipendenti (DVI, NDVI, BSI, SAVI), l'entità del cambiamento nella copertura vegetale e nel suolo nudo nell'arco di circa diciassette anni. Confrontando le percentuali di "Suolo nudo/degradato" contro "Vegetazione" tra le due date in entrambe le tabelle (NDVI e SAVI), una diminuzione della quota di suolo nudo accompagnata da un aumento della quota di vegetazione supporterebbe l'ipotesi di un rinverdimento dell'area, in coerenza con quanto osservabile anche nelle mappe di differenza DVI, NDVI e BSI.
 
-_[Da completare con i valori percentuali effettivi ottenuti eseguendo lo script, confrontandoli con gli obiettivi dell'iniziativa Muraglia Verde descritti nell'Introduzione.]_
+È opportuno interpretare questi risultati con cautela, perché la letteratura scientifica sulla Muraglia Verde in Senegal non è unanime. Alcuni studi basati su serie storiche NDVI (Gore et al., 2023) riportano un miglioramento della relazione tra vegetazione e parametri climatici successivo agli interventi di rimboschimento, mentre lavori più recenti basati su telerilevamento satellitare (Zhu et al., 2025) segnalano che, su un campione di aree rimboschite in Senegal, solo una minoranza mostra un rinverdimento significativamente superiore a quello atteso naturalmente, imputando parte del divario tra finanziamenti globali e risultati locali a fattori come la bassa sopravvivenza delle piantine e la discontinuità nella manutenzione. Il confronto pre/post di un singolo settore, come quello condotto in questo progetto, va quindi considerato un caso di studio locale e non necessariamente rappresentativo dell'andamento dell'intera iniziativa.
+
+Restano inoltre alcuni limiti metodologici da tenere presenti:
+- il confronto si basa su due sole annate (2005 e 2022): variazioni interannuali di piovosità possono influenzare NDVI/DVI/SAVI indipendentemente dagli interventi di ripristino;
+- le soglie di classificazione (0.3 per NDVI, 0.2 per SAVI) sono scelte comuni in letteratura ma restano in parte arbitrarie.
+
+Nel complesso, il telerilevamento multitemporale si conferma comunque uno strumento fondamentale ed economico per monitorare oggettivamente gli effetti di interventi di ripristino ambientale su larga scala, specialmente in aree remote dove il monitoraggio a terra è logisticamente difficile.
+
+# 📚 Riferimenti bibliografici
+
+- Gore, B.T.O., Aman, A., Kouadio, Y., Duclos, O.-M. (2023). Recent Vegetation Cover Dynamics and Climatic Parameters Evolution Study in the Great Green Wall of Senegal. *Journal of Environmental Protection*, 14, 254-284.
+- Schucknecht, A., Meroni, M., Rembold, F. (2016). Monitoring Project Impact on Biomass Increase in the Context of the Great Green Wall for the Sahara and Sahel Initiative in Senegal. European Commission Joint Research Centre, Ispra.
+- Zhu, A.L., Ndiaye, A., Dahm, R., Mauclaire, M., Boas, I. (2025). Africa's Great Green Mirage? Assessing the disconnect between global finance and local implementation in Africa's Great Green Wall. *Land Use Policy*, 157, 107670.
 
 # Grazie per l'attenzione! 🌳
