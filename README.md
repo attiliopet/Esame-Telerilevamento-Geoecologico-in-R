@@ -5,11 +5,7 @@
 # =====================================================================
 # INTRODUZIONE
 # =====================================================================
-# La "Muraglia Verde" (Great Green Wall) è un'iniziativa panafricana lanciata nel
-# 2007 dall'Unione Africana per contrastare la desertificazione e il degrado del
-# suolo lungo la fascia del Sahel. Il progetto prevede la realizzazione di un
-# mosaico di alberi, pascoli e vegetazione lungo una fascia di circa 8.000 km che
-# attraversa il continente dal Senegal, a ovest, a Gibuti, a est, coinvolgendo
+# La "Muraglia Verde" (Great Green Wall) è un'iniziativa panafricana lanciata nel 2007 dall'Unione Africana per contrastare la desertificazione e il degrado del suolo lungo la fascia del Sahel. Il progetto prevede la realizzazione di un mosaico di alberi, pascoli e vegetazione lungo una fascia di circa 8.000 km cheattraversa il continente dal Senegal, a ovest, a Gibuti, a est, coinvolgendo
 # undici paesi saheliani (tra cui Senegal, Mauritania, Mali, Niger, Ciad, Sudan
 # ed Etiopia). L'obiettivo dichiarato dell'iniziativa, da raggiungere entro il
 # 2030, è il ripristino di 100 milioni di ettari di terreno degradato.
