@@ -10,11 +10,8 @@ Il degrado del suolo in quest'area è storicamente legato a siccità ricorrenti,
 
 In questo progetto si confrontano due immagini satellitari Landsat acquisite a circa 17 anni di distanza (2005 e 2022) su un settore della Muraglia Verde, per valutare se e in che misura l'intervento abbia prodotto un effettivo rinverdimento dell'area e una riduzione delle superfici di suolo nudo.
 
-<p align="center">
-  <img src="img/00_area_di_studio.png" width="800">
 </p>
 
-> Area di studio (da sostituire con una mappa/immagine reale della zona analizzata)
 
 # 🎯 Obiettivo del progetto
 
